@@ -1,0 +1,10 @@
+{
+  "name": "SleepDock",
+  "identifier": "app.sleepdock.desktop",
+  "version": "0.1.0",
+  "main": "./cmd/sleepdock",
+  "icon": "assets/icon.png",
+  "out": "dist/native",
+  "resources": ["LICENSE", "THIRD-PARTY-NOTICES.txt", "licenses"],
+  "macos": {"minimumSystemVersion": "12.0"}
+}

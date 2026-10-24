@@ -1,0 +1,107 @@
+package desktop
+
+import (
+	"sleepdock/internal/domain"
+	"testing"
+
+	"github.com/egoist/mygo/ui"
+)
+
+func TestPresetAndStart(t *testing.T) {
+	v := Preview("idle")
+	b := v.Backend.(*previewBackend)
+	tt := ui.NewTester(v.Render, 560, 640)
+	if err := tt.Click("30分"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click("开始计时"); err != nil {
+		t.Fatal(err)
+	}
+	if b.starts != 1 || b.model.Timer.Spec.Minutes != 30 || b.model.Timer.Phase != domain.Running {
+		t.Fatal(b.model.Timer)
+	}
+	if tt.HasText("开始计时") || !tt.HasText("取消") {
+		t.Fatal(tt.Texts())
+	}
+}
+func TestAtTimeAndInvalidInput(t *testing.T) {
+	v := Preview("at")
+	b := v.Backend.(*previewBackend)
+	tt := ui.NewTester(v.Render, 560, 640)
+	if !tt.HasText("明天 02:01 睡眠") {
+		t.Fatal(tt.Texts())
+	}
+	v.atHour = "99"
+	tt.Frame()
+	if err := tt.Click("开始计时"); err != nil {
+		t.Fatal(err)
+	}
+	if b.starts != 0 {
+		t.Fatal("invalid time started")
+	}
+	v.atHour = "02"
+	tt.Frame()
+	if err := tt.Click("开始计时"); err != nil {
+		t.Fatal(err)
+	}
+	if b.model.Timer.Spec.Mode != "at" {
+		t.Fatal(b.model.Timer.Spec)
+	}
+}
+func TestCancelPostponeAndRetry(t *testing.T) {
+	v := Preview("running")
+	b := v.Backend.(*previewBackend)
+	tt := ui.NewTester(v.Render, 560, 640)
+	old := b.model.Timer.TriggerAt
+	if err := tt.Click("延后15分钟"); err != nil {
+		t.Fatal(err)
+	}
+	if !b.model.Timer.TriggerAt.After(old) {
+		t.Fatal("not postponed")
+	}
+	if err := tt.Click("取消"); err != nil {
+		t.Fatal(err)
+	}
+	if b.model.Timer.Phase != domain.Cancelled || !tt.HasText("重新设置") {
+		t.Fatal(tt.Texts())
+	}
+	v = Preview("error")
+	tt = ui.NewTester(v.Render, 560, 640)
+	if tt.HasText("系统未接受睡眠请求。请检查本机电源权限。") {
+		t.Fatal("details shown without asking")
+	}
+	if err := tt.Click("详情"); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText("系统未接受睡眠请求。请检查本机电源权限。") {
+		t.Fatal("missing error details")
+	}
+}
+func TestResponsiveThemes(t *testing.T) {
+	for _, state := range []string{"idle", "at", "running", "grace", "dark", "completed", "error", "settings"} {
+		for _, size := range [][2]int{{560, 640}, {480, 600}} {
+			t.Run(state, func(t *testing.T) {
+				v := Preview(state)
+				tt := ui.NewTester(v.Render, size[0], size[1])
+				if !tt.HasText("SleepDock") {
+					t.Fatal(tt.Texts())
+				}
+			})
+		}
+	}
+	v := Preview("idle")
+	v.Backend.(*previewBackend).model.Preferences.Theme = "system"
+	tt := ui.NewTester(v.Render, 560, 640)
+	color := tt.Image().At(0, 0)
+	tt.SetDark(true)
+	if tt.Image().At(0, 0) == color {
+		t.Fatal("system theme did not change")
+	}
+}
+func TestGraceDisplaysSecondsAndDirectActions(t *testing.T) {
+	v := Preview("grace")
+	tt := ui.NewTester(v.Render, 560, 640)
+	if !tt.HasText("42") || !tt.HasText("即将睡眠") || !tt.HasText("取消") || !tt.HasText("延后15分钟") {
+		t.Fatal(tt.Texts())
+	}
+}

@@ -1,0 +1,6 @@
+/dist/
+/artifacts/
+/.mygo/
+__pycache__/
+*.test
+.DS_Store
