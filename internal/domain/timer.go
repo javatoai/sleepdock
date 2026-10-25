@@ -151,9 +151,8 @@ func (t Timer) Remaining(now time.Time) time.Duration {
 }
 
 type Preferences struct {
-	Version int    `json:"version"`
-	Theme   string `json:"theme"`
-	Last    Spec   `json:"last"`
+	Version int  `json:"version"`
+	Last    Spec `json:"last"`
 }
 
-func Defaults() Preferences { return Preferences{Version: 1, Theme: "system", Last: DefaultSpec()} }
+func Defaults() Preferences { return Preferences{Version: 1, Last: DefaultSpec()} }

@@ -23,9 +23,9 @@ func render(out string) error {
 	if err := os.MkdirAll(out, 0755); err != nil {
 		return err
 	}
-	for _, state := range []string{"idle", "at", "running", "grace", "dark", "completed", "error", "settings"} {
+	for _, state := range []string{"idle", "at", "running", "grace", "completed", "error"} {
 		v := desktop.Preview(state)
-		tt := ui.NewTester(v.Render, 560, 640)
+		tt := ui.NewTester(v.Render, 560, 590)
 		f, err := os.Create(filepath.Join(out, state+".png"))
 		if err != nil {
 			return err
@@ -39,6 +39,6 @@ func render(out string) error {
 			return closeErr
 		}
 	}
-	fmt.Println("已生成八种离线界面预览")
+	fmt.Println("已生成六种离线界面预览")
 	return nil
 }

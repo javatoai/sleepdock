@@ -134,10 +134,6 @@ func TestSettingsRestoreDoesNotRestoreActivePlan(t *testing.T) {
 	if c.Snapshot().Timer.Phase != domain.Idle || c.Snapshot().Preferences.Last.Hour != 2 {
 		t.Fatal(c.Snapshot())
 	}
-	c.SetTheme("dark")
-	if c.Snapshot().Preferences.Theme != "dark" {
-		t.Fatal("theme not saved")
-	}
 }
 func TestFailedNotificationDoesNotSkipGrace(t *testing.T) {
 	c, clock, _ := fixture(t, sleepFunc(func(context.Context) error { return nil }), notifyFunc(func() error { return errors.New("not supported") }), &fakeStore{prefs: domain.Defaults(), fail: true})

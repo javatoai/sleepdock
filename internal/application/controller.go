@@ -163,16 +163,6 @@ func (c *Controller) Report(err error) {
 	c.notify()
 }
 
-func (c *Controller) SetTheme(theme string) {
-	if theme != "system" && theme != "light" && theme != "dark" {
-		return
-	}
-	c.mu.Lock()
-	c.model.Preferences.Theme = theme
-	c.saveLocked()
-	c.mu.Unlock()
-	c.notify()
-}
 func (c *Controller) saveLocked() {
 	if err := c.store.Save(c.model.Preferences); err != nil {
 		c.model.Notice = "设置未保存：" + err.Error()

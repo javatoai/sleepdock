@@ -1,6 +1,6 @@
 # SleepDock 项目交接
 
-更新日期：2026-10-24。当前版本：0.1.0。
+更新日期：2026-10-25。当前版本：0.1.0。
 
 本文件面向接手开发、测试和发布的工程师。首次阅读建议依次查看本文件、[README](README.md)、[实机验收清单](docs/ACCEPTANCE.md)，再进入对应业务包。
 
@@ -8,7 +8,7 @@
 
 SleepDock 是独立的原生定时睡眠应用，使用 Go + MyGO，目标平台为 Windows x64、macOS arm64 和 macOS amd64。它有自己的窗口、托盘、配置目录和发布包。
 
-主界面以 UI 表达功能：模式切换、小时／分钟输入、快捷时长、大号环形倒计时和操作按钮。仅保留必要标签，功能原理、权限和开发信息放在文档中；错误细节由用户点击展开。
+主界面以 UI 表达功能：模式切换、小时／分钟输入、快捷时长、大号环形倒计时和操作按钮。固定使用浅色主题；按用户要求移除了内容区顶部重复的图标、名称和主题设置入口。仅保留必要标签，功能原理、权限和开发信息放在文档中；错误细节由用户点击展开。
 
 维护时需保持以下行为：
 
@@ -16,24 +16,25 @@ SleepDock 是独立的原生定时睡眠应用，使用 Go + MyGO，目标平台
 - 不保持唤醒，不修改系统电源计划；系统提前睡眠时结束本次计划，唤醒后不补执行。
 - 活动计时关闭窗口时隐藏到托盘；无活动计时关闭窗口退出。托盘不可用时关闭窗口退出，并保留可查看的错误提示。
 - 到时额外保留 60 秒提醒，允许取消和延后；无人操作才请求普通睡眠。
-- 退出取消计划；重启只恢复上次输入与主题，不恢复旧计划、不默认开机自启。
+- 退出取消计划；重启只恢复上次输入，不恢复旧计划、不默认开机自启。
 - 首版没有 AI 完成检测、AI 调用接口、多工具首页或流程编排。
 
 ## 2. 已实现功能与当前交付状态
 
-已实现倒计时、跨午夜的指定时间、15 分钟延后、取消、60 秒提醒、托盘菜单、睡眠失败重试、深浅主题和原子设置存储。Windows 与 macOS 的睡眠适配及三平台打包配置已经落地。
+已实现倒计时、跨午夜的指定时间、15 分钟延后、取消、60 秒提醒、托盘菜单、睡眠失败重试、固定浅色界面和原子设置存储。Windows 与 macOS 的睡眠适配及三平台打包配置已经落地。
 
 | 验证项目 | 当前结果 |
 | --- | --- |
-| Go 单元测试、MyGO 内存交互测试 | Linux 云端通过 |
+| Go 单元测试、MyGO 内存交互测试 | Linux 云端及 Windows 本机通过 |
 | `go test -race ./internal/...` | Linux 云端通过 |
 | `go vet ./...` | 通过 |
 | Windows x64 / macOS arm64 / macOS amd64 构建 | 通过，产物架构与 ZIP 完整性已核对 |
 | Linux 图形启动 | 在 Xvfb 虚拟显示器中启动，使用无 GPU 回退绘制 |
+| Windows 原生窗口启动与界面 | 本机启动通过；已检查默认和最小窗口尺寸，固定使用浅色界面 |
 | Windows / macOS 原生托盘、通知、睡眠与唤醒 | 尚未实机验收 |
 | Windows 代码签名、Apple Developer ID 签名及公证 | 尚未配置 |
 
-上述云端启动不代表用户电脑已经启动程序。当前开发路径是 `/workspace/sleepdock`；用户本机应解压对应 ZIP，或在本机安装 Go 后从源码运行。
+云端开发路径是 `/workspace/sleepdock`，Windows 本机项目路径是 `Q:\sleepdock`。本机开发程序为 `artifacts/SleepDock.exe`，使用 `artifacts/dev-config` 保存开发配置；原生窗口启动与界面检查不代表实际睡眠、通知和唤醒已完成验收。
 
 ## 3. 快速接手
 
@@ -62,13 +63,13 @@ go run ./cmd/icon
 | `cmd/sleepdock/main.go` | 参数、版本、配置路径、桌面启动 |
 | `internal/domain/timer.go` | 时间计算、计时状态机、一次性触发与计划身份 |
 | `internal/application/controller.go` | 可注入时钟／睡眠／通知／存储，状态协调、异步效果与退出 |
-| `internal/desktop/view.go` | 时间输入、运行中、提醒、结果与设置界面 |
-| `internal/desktop/theme.go` | 主题、图标、按钮与环形绘制 |
+| `internal/desktop/view.go` | 时间输入、运行中、提醒、结果与详情界面 |
+| `internal/desktop/theme.go` | 固定浅色配色、图标、按钮与环形绘制 |
 | `internal/desktop/run.go` | MyGO 窗口、托盘、通知、系统睡眠事件与一秒 tick |
 | `internal/platform/sleep_*.go` | 各系统真实睡眠接口 |
 | `internal/storage/preferences.go` | JSON 原子保存、损坏备份、未来版本保护 |
 
-状态主路径：`idle → running → grace → requesting → completed`。取消进入 `cancelled`，系统请求失败进入 `failed`；失败重试重新进入完整 60 秒 `grace`。
+状态主路径：`idle → running → grace → requesting → completed`。取消进入 `cancelled`，系统请求失败进入 `failed`；失败重试重新进入完整 60 秒 `grace`。后台计时每次按剩余时间的下一秒变化重设定时器，避免固定节拍与取整边界错位导致偶发跳秒；调度延迟不会累积改变真实截止时间。
 
 界面通过控制器调用用例，不直接调用电源接口。控制器持有锁保护状态，后台效果通过快照和窗口更新通知回到 MyGO 主线程。系统事件与视图回调不能在 UI 线程等待计时 goroutine 或原生睡眠调用结束。
 
@@ -85,7 +86,7 @@ Windows 使用 `powrprof.dll!SetSuspendState(false, false, false)`，在本进�
 
 ## 6. 配置与资源
 
-Windows 配置为 `%APPDATA%\SleepDock\settings.json`；macOS 为 `~/Library/Application Support/SleepDock/settings.json`。schema 版本为 1，仅保存 `version`、`theme` 和 `last`。不要将活动计划或已过期的目标时刻加入自动恢复流程。
+Windows 配置为 `%APPDATA%\SleepDock\settings.json`；macOS 为 `~/Library/Application Support/SleepDock/settings.json`。schema 版本为 1，仅保存 `version` 和 `last`，兼容读取旧配置并忽略其中的 `theme`。不要将活动计划或已过期的目标时刻加入自动恢复流程。
 
 图片与图标位于 `assets/`，README 图片位于 `docs/assets/`。`cmd/preview` 使用内存后端，不调用真实电源接口。用户原始 Windows 脚本存放于 `references/windows-timer/`，作为行为参考，GUI 运行不依赖这些脚本。
 

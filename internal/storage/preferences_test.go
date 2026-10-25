@@ -11,18 +11,24 @@ import (
 func TestPreferencesRoundtripAndNoActivePlan(t *testing.T) {
 	s := &Preferences{Path: filepath.Join(t.TempDir(), "settings.json")}
 	p, err := s.Load()
-	if err != nil || p.Theme != "system" {
+	if err != nil || p != domain.Defaults() {
 		t.Fatal(p, err)
 	}
-	p.Theme = "dark"
 	p.Last = domain.Spec{Mode: "at", Hour: 3, Minute: 15}
+	legacy := `{"version":1,"theme":"dark","last":{"mode":"at","hour":3,"minute":15}}`
+	if err := os.WriteFile(s.Path, []byte(legacy), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := s.Load(); err != nil || got != p {
+		t.Fatal("legacy preferences lost the saved time", got, err)
+	}
 	for range 2 {
 		if err := s.Save(p); err != nil {
 			t.Fatal(err)
 		}
 	}
 	got, err := s.Load()
-	if err != nil || got.Last != p.Last || got.Theme != "dark" {
+	if err != nil || got != p {
 		t.Fatal(got, err)
 	}
 	data, _ := os.ReadFile(s.Path)
@@ -30,7 +36,7 @@ func TestPreferencesRoundtripAndNoActivePlan(t *testing.T) {
 	if err := json.Unmarshal(data, &fields); err != nil {
 		t.Fatal(err)
 	}
-	if len(fields) != 3 {
+	if len(fields) != 2 {
 		t.Fatal("unexpected persisted state", fields)
 	}
 }

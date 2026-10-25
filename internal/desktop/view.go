@@ -18,7 +18,6 @@ type Backend interface {
 	Cancel()
 	Retry()
 	Reset()
-	SetTheme(string)
 	Dismiss()
 }
 
@@ -27,7 +26,7 @@ type View struct {
 	Hide                             func()
 	mode                             int
 	hours, minutes, atHour, atMinute string
-	settings, details                bool
+	details                          bool
 }
 
 func NewView(backend Backend) *View {
@@ -56,28 +55,18 @@ func (v *View) spec() (domain.Spec, error) {
 
 func (v *View) Render(c *ui.Context) {
 	m := v.Backend.Snapshot()
-	p := theme(c, m.Preferences.Theme)
+	p := lightTheme(c)
 	ui.Column(c).Fill().Padding(22, 26, 26).Gap(20).Children(func() {
-		ui.Row(c).Gap(9).Children(func() {
-			ui.Box(c).Size(31, 31).Radius(10).Background(p.tint).Center().Children(func() { icon(c, "moon", 19, p.accent) })
-			ui.Text(c, "SleepDock").FontSize(16).Bold().TextColor(p.text)
-			ui.Spacer(c)
-			if m.Notice != "" {
-				if iconButton(c, "notice", "warning", "查看提示", p) {
-					v.details = true
-				}
-			}
-			if m.Timer.Active() && v.Hide != nil {
-				if iconButton(c, "hide", "tray", "收进托盘", p) {
-					v.Hide()
-				}
-			}
-			if iconButton(c, "settings", "settings", "设置", p) {
-				v.settings = true
-			}
-		})
 		ui.Scroll(c.Key("page")).Grow(1).Children(func() {
 			ui.Column(c.Key("card")).MinHeight(490).FillWidth().Padding(24, 24, 26).Gap(20).Radius(24).Background(p.surface).Border(1, p.line).Children(func() {
+				if m.Notice != "" {
+					ui.Row(c).Children(func() {
+						ui.Spacer(c)
+						if iconButton(c, "notice", "warning", "查看提示", p) {
+							v.details = true
+						}
+					})
+				}
 				switch m.Timer.Phase {
 				case domain.Running, domain.Grace, domain.Requesting:
 					v.active(c, m, p)
@@ -89,7 +78,6 @@ func (v *View) Render(c *ui.Context) {
 			})
 		})
 	})
-	v.settingsDialog(c, m, p)
 	v.detailsDialog(c, m, p)
 }
 
@@ -208,13 +196,16 @@ func (v *View) active(c *ui.Context, m application.Model, p palette) {
 	})
 	v.timeCaption(c, m.Now, m.Timer.SleepAt, nil, p)
 	ui.Spacer(c).MinHeight(0)
-	ui.Row(c).Gap(10).Children(func() {
+	ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
 		disabled := !m.Timer.Cancellable()
 		if button(c, "cancel", "close", "取消", p, false, disabled) {
 			v.Backend.Cancel()
 		}
 		if button(c, "postpone", "plus", "延后15分钟", p, true, disabled) {
 			v.Backend.Postpone()
+		}
+		if v.Hide != nil && iconButton(c, "hide", "tray", "收进托盘", p) {
+			v.Hide()
 		}
 	})
 }
@@ -245,32 +236,6 @@ func (v *View) result(c *ui.Context, m application.Model, p palette) {
 				v.Backend.Retry()
 			}
 		}
-	})
-}
-
-func (v *View) settingsDialog(c *ui.Context, m application.Model, p palette) {
-	ui.DialogBase(c.Key("settings-modal"), &v.settings, func(backdrop, panel ui.Element) {
-		backdrop.Background(ui.RGBA(0, 0, 0, 0.30))
-		panel.Width(360).MaxWidthPercent(90).Padding(24).Gap(24).Radius(20).Background(p.surface)
-		ui.Row(c).Children(func() {
-			ui.Text(c, "设置").FontSize(18).Bold().Grow(1)
-			if iconButton(c, "close", "close", "关闭设置", p) {
-				v.settings = false
-			}
-		})
-		ui.Column(c).Gap(10).Children(func() {
-			ui.Text(c, "外观").FontSize(12).TextColor(p.muted)
-			i := 0
-			if m.Preferences.Theme == "light" {
-				i = 1
-			} else if m.Preferences.Theme == "dark" {
-				i = 2
-			}
-			if ui.Segmented(c.Key("theme"), &i, "跟随系统", "浅色", "深色").Changed() {
-				v.Backend.SetTheme([]string{"system", "light", "dark"}[i])
-			}
-		})
-		ui.Text(c, "SleepDock  0.1.0").FontSize(11).TextColor(p.muted)
 	})
 }
 

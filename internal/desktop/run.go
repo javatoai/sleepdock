@@ -42,7 +42,7 @@ func Run(configPath string) error {
 				s.window.Hide()
 			}
 		}
-		s.window = mygo.NewWindow(mygo.WindowOptions{Title: "SleepDock", Width: 560, Height: 640, MinWidth: 480, MinHeight: 600, Content: ui.View(view.Render)})
+		s.window = mygo.NewWindow(mygo.WindowOptions{Title: "SleepDock", Width: 560, Height: 590, MinWidth: 480, MinHeight: 590, Content: ui.View(view.Render)})
 		if err := s.window.SetIcon(assets.Icon); err != nil {
 			s.controller.Report(err)
 		}
@@ -74,20 +74,37 @@ func Run(configPath string) error {
 		ctx, cancel := context.WithCancel(context.Background())
 		s.stop = cancel
 		go func() {
-			ticker := time.NewTicker(time.Second)
-			defer ticker.Stop()
+			timer := time.NewTimer(time.Second)
+			defer timer.Stop()
 			for {
 				select {
 				case <-ctx.Done():
 					return
-				case <-ticker.C:
+				case <-timer.C:
 					s.controller.Tick()
+					timer.Reset(nextTickDelay(s.controller.Snapshot()))
 				}
 			}
 		}()
 		s.changed()
 	})
 	return mygo.App.Run()
+}
+
+func nextTickDelay(m application.Model) time.Duration {
+	if !m.Timer.Cancellable() {
+		return time.Second
+	}
+	remaining := m.Timer.Remaining(m.Now)
+	if remaining <= 0 {
+		return time.Millisecond
+	}
+	// 对齐剩余秒数的下一次变化，避免固定节拍的延迟在取整边界两侧抖动。
+	// 每次都从真实截止时间重算，调度延迟不会逐次累积到计时里。
+	if delay := remaining % time.Second; delay > 0 {
+		return delay
+	}
+	return time.Second
 }
 
 func (s *nativeApp) show() { s.window.Show(); s.window.Focus() }

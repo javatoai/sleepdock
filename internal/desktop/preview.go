@@ -10,10 +10,6 @@ import (
 func Preview(state string) *View {
 	now := time.Date(2026, 10, 24, 22, 30, 0, 0, time.FixedZone("UTC+8", 8*3600))
 	m := application.Model{Preferences: domain.Defaults(), Timer: domain.Timer{Phase: domain.Idle}, Now: now}
-	m.Preferences.Theme = "light"
-	if state == "dark" {
-		m.Preferences.Theme = "dark"
-	}
 	if state == "running" || state == "grace" {
 		_ = m.Timer.Start(now.Add(-25*time.Minute), domain.Spec{Mode: "duration", Minutes: 120})
 		if state == "grace" {
@@ -35,9 +31,6 @@ func Preview(state string) *View {
 		v.atHour = "02"
 		v.atMinute = "00"
 	}
-	if state == "settings" {
-		v.settings = true
-	}
 	return v
 }
 
@@ -53,9 +46,8 @@ func (b *previewBackend) Start(s domain.Spec) {
 		b.model.Notice = err.Error()
 	}
 }
-func (b *previewBackend) Postpone()         { b.postpones++; b.model.Timer.Postpone(b.model.Now) }
-func (b *previewBackend) Cancel()           { b.cancels++; b.model.Timer.Cancel() }
-func (b *previewBackend) Retry()            { b.model.Timer.Retry(b.model.Now) }
-func (b *previewBackend) Reset()            { b.model.Timer.Phase = domain.Idle }
-func (b *previewBackend) SetTheme(t string) { b.model.Preferences.Theme = t }
-func (b *previewBackend) Dismiss()          { b.model.Notice = "" }
+func (b *previewBackend) Postpone() { b.postpones++; b.model.Timer.Postpone(b.model.Now) }
+func (b *previewBackend) Cancel()   { b.cancels++; b.model.Timer.Cancel() }
+func (b *previewBackend) Retry()    { b.model.Timer.Retry(b.model.Now) }
+func (b *previewBackend) Reset()    { b.model.Timer.Phase = domain.Idle }
+func (b *previewBackend) Dismiss()  { b.model.Notice = "" }

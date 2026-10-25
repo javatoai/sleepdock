@@ -47,9 +47,6 @@ func (s *Preferences) Load() (domain.Preferences, error) {
 	if saved.Version != 1 {
 		return p, fmt.Errorf("设置版本不匹配：%d", saved.Version)
 	}
-	if saved.Theme != "system" && saved.Theme != "light" && saved.Theme != "dark" {
-		saved.Theme = "system"
-	}
 	if _, err = saved.Last.Trigger(time.Now()); err != nil {
 		saved.Last = domain.DefaultSpec()
 	}

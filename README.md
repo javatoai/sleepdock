@@ -6,7 +6,7 @@
 
 设好时间，收进托盘。到时提醒一分钟，再让电脑进入睡眠。
 
-SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Intel。主界面以时间选择、环形倒计时和操作按钮表达功能，支持浅色、深色与系统主题。运行时无需安装 Go 或 PowerShell。
+SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Intel。主界面以时间选择、环形倒计时和操作按钮表达功能，固定使用浅色主题。运行时无需安装 Go 或 PowerShell。
 
 ## 界面
 
@@ -17,7 +17,7 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
   </tr>
   <tr>
     <td><strong>最后一分钟</strong><br><br><img src="docs/assets/grace.png" alt="睡眠前最后一分钟的提醒界面"></td>
-    <td><strong>深色主题</strong><br><br><img src="docs/assets/dark.png" alt="SleepDock 深色时间设定界面"></td>
+    <td><strong>指定时间</strong><br><br><img src="docs/assets/at.png" alt="SleepDock 指定睡眠提醒时刻界面"></td>
   </tr>
 </table>
 
@@ -39,21 +39,21 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
 - 输入时间是提醒触发时间，之后额外保留 60 秒取消机会；界面展示的预计睡眠时间已包含这 60 秒。实际事件处理延迟时仍保留完整提醒时间。
 - “延后15分钟”将尚未到达的计划时刻后移 15 分钟；在提醒期间操作则从当前时刻重新计时 15 分钟，随后仍有 60 秒提醒。
 - **遵循系统已有电源计划，不保持唤醒。** 电脑提前自动或手动睡眠时，本次计划结束；唤醒后不会补执行或再次睡回去。
-- 一次只运行一个计划。完整退出会取消当前计时；重新启动只恢复上次输入与主题，不恢复旧计划，也不会默认开机自启。
+- 一次只运行一个计划。完整退出会取消当前计时；重新启动只恢复上次输入，不恢复旧计划，也不会默认开机自启。
 - 睡眠请求失败时保留“重试”和“详情”。重试会重新给予 60 秒提醒，避免立即请求睡眠。
 
 系统通知受本机权限与勿扰设置影响；计时到点时应用也会显示提醒窗口。Windows 请求普通睡眠，macOS 使用系统 `pmset sleepnow`，应用不强制终止其他程序，不修改全局电源设置。
 
-### 设置
+### 保存上次输入
 
-右上角齿轮切换主题。设置文件位于：
+上次输入会自动保存，配置文件位于：
 
 | 系统 | 路径 |
 | --- | --- |
 | Windows | `%APPDATA%\SleepDock\settings.json` |
 | macOS | `~/Library/Application Support/SleepDock/settings.json` |
 
-文件只保存上次输入和主题，使用原子替换；损坏设置在重写前保留备份。没有 GitHub 登录或其他账户依赖。
+文件只保存上次输入，使用原子替换；损坏设置在重写前保留备份。旧配置中的主题选项会被忽略。没有 GitHub 登录或其他账户依赖。
 
 ## 构建
 
@@ -64,7 +64,7 @@ go test ./...
 go run ./cmd/sleepdock --config-dir ./artifacts/dev-config
 ```
 
-生成八种离线界面预览：
+生成六种离线界面预览：
 
 ```sh
 go run ./cmd/preview -out artifacts
