@@ -35,8 +35,8 @@ func Preview(state string) *View {
 }
 
 type previewBackend struct {
-	model                      application.Model
-	starts, postpones, cancels int
+	model                            application.Model
+	starts, postpones, cancels, nows int
 }
 
 func (b *previewBackend) Snapshot() application.Model { return b.model }
@@ -46,6 +46,7 @@ func (b *previewBackend) Start(s domain.Spec) {
 		b.model.Notice = err.Error()
 	}
 }
+func (b *previewBackend) SleepNow() { b.nows++; b.model.Timer.SleepNow(b.model.Now) }
 func (b *previewBackend) Postpone() { b.postpones++; b.model.Timer.Postpone(b.model.Now) }
 func (b *previewBackend) Cancel()   { b.cancels++; b.model.Timer.Cancel() }
 func (b *previewBackend) Retry()    { b.model.Timer.Retry(b.model.Now) }

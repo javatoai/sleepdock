@@ -22,6 +22,7 @@ type nativeApp struct {
 	tray                                           *mygo.Tray
 	notification                                   *mygo.Notification
 	statusItem, postponeItem, cancelItem, quitItem *mygo.MenuItem
+	sleepNowItem                                   *mygo.MenuItem
 	quitting, allowQuit                            bool
 	stop                                           context.CancelFunc
 }
@@ -110,12 +111,13 @@ func nextTickDelay(m application.Model) time.Duration {
 func (s *nativeApp) show() { s.window.Show(); s.window.Focus() }
 func (s *nativeApp) createTray() {
 	s.statusItem = &mygo.MenuItem{Label: "SleepDock", Disabled: true}
+	s.sleepNowItem = &mygo.MenuItem{Label: "立即睡眠", Click: func(*mygo.MenuItem, *mygo.Window) { s.controller.SleepNow() }}
 	s.postponeItem = &mygo.MenuItem{Label: "延后15分钟", Click: func(*mygo.MenuItem, *mygo.Window) { s.controller.Postpone() }}
 	s.cancelItem = &mygo.MenuItem{Label: "取消计划", Click: func(*mygo.MenuItem, *mygo.Window) { s.controller.Cancel() }}
 	s.quitItem = &mygo.MenuItem{Label: "退出", Click: func(*mygo.MenuItem, *mygo.Window) { s.quit() }}
 	menu := mygo.NewMenu([]*mygo.MenuItem{
 		s.statusItem, mygo.Separator(), {Label: "打开 SleepDock", Click: func(*mygo.MenuItem, *mygo.Window) { s.show() }},
-		s.postponeItem, s.cancelItem, mygo.Separator(), s.quitItem,
+		s.sleepNowItem, s.postponeItem, s.cancelItem, mygo.Separator(), s.quitItem,
 	})
 	trayIcon := assets.TrayColor
 	if runtime.GOOS == "darwin" {
@@ -140,6 +142,7 @@ func (s *nativeApp) changed() {
 			label = "正在睡眠"
 		}
 		s.statusItem.SetLabel(label)
+		s.sleepNowItem.SetEnabled(m.Timer.CanSleepNow())
 		s.postponeItem.SetEnabled(m.Timer.Cancellable())
 		s.cancelItem.SetEnabled(m.Timer.Cancellable())
 		quit := "退出"
@@ -161,6 +164,9 @@ func (s *nativeApp) Remind() error {
 			return
 		}
 		s.show()
+		if s.notification != nil {
+			s.notification.Close()
+		}
 		s.notification = mygo.NewNotification(mygo.NotificationOptions{ID: "sleepdock-reminder", Title: "SleepDock", Body: "60秒后睡眠"})
 		s.notification.OnClick(s.show)
 		if err := s.notification.Show(); err != nil {

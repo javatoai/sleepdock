@@ -83,6 +83,41 @@ func TestCancelPostponeAndRetry(t *testing.T) {
 		t.Fatal("missing error details")
 	}
 }
+func TestImmediateSleepFromSetupAndCountdown(t *testing.T) {
+	for _, size := range [][2]int{{560, 590}, {480, 590}} {
+		v := Preview("idle")
+		b := v.Backend.(*previewBackend)
+		tt := ui.NewTester(v.Render, size[0], size[1])
+		if !tt.HasText("立即睡眠") {
+			t.Fatal(tt.Texts())
+		}
+		if err := tt.Click("立即睡眠"); err != nil {
+			t.Fatal(err)
+		}
+		if b.nows != 1 || b.model.Timer.Phase != domain.Grace {
+			t.Fatal(b.model.Timer, b.nows)
+		}
+		if !tt.HasText("即将睡眠") || !tt.HasText("取消") || tt.HasText("立即睡眠") {
+			t.Fatal(tt.Texts())
+		}
+	}
+	v := Preview("running")
+	b := v.Backend.(*previewBackend)
+	tt := ui.NewTester(v.Render, 560, 590)
+	if err := tt.Click("立即睡眠"); err != nil {
+		t.Fatal(err)
+	}
+	if b.nows != 1 || b.model.Timer.Phase != domain.Grace || !tt.HasText("即将睡眠") {
+		t.Fatal(b.model.Timer, tt.Texts())
+	}
+}
+func TestImmediateSleepHiddenDuringReminder(t *testing.T) {
+	v := Preview("grace")
+	tt := ui.NewTester(v.Render, 560, 590)
+	if tt.HasText("立即睡眠") {
+		t.Fatal("reminder already running", tt.Texts())
+	}
+}
 func TestResponsiveLightTheme(t *testing.T) {
 	for _, state := range []struct{ name, text string }{
 		{"idle", "开始计时"}, {"at", "开始计时"}, {"running", "计时中"},

@@ -67,6 +67,25 @@ func (t Timer) Active() bool      { return t.Phase == Running || t.Phase == Grac
 func (t Timer) Editable() bool    { return !t.Active() }
 func (t Timer) Cancellable() bool { return t.Phase == Running || t.Phase == Grace }
 
+// CanSleepNow reports whether the final reminder can start immediately. During
+// the reminder and while a sleep request is in flight there is nothing "now"
+// would add, so a second trigger must not restart or duplicate it.
+func (t Timer) CanSleepNow() bool { return t.Phase != Grace && t.Phase != Requesting }
+
+// SleepNow skips the configured wait and enters the full reminder minute. The
+// saved input stays untouched; only an asynchronous result matching ID may
+// finish the plan.
+func (t *Timer) SleepNow(now time.Time) bool {
+	if !t.CanSleepNow() {
+		return false
+	}
+	t.ID++
+	t.Phase = Grace
+	t.StartedAt, t.TriggerAt, t.SleepAt = now, now, now.Add(GracePeriod)
+	t.Detail = ""
+	return true
+}
+
 func (t *Timer) Start(now time.Time, spec Spec) error {
 	if t.Active() {
 		return fmt.Errorf("已有计时正在运行")

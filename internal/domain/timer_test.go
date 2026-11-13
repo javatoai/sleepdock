@@ -75,6 +75,45 @@ func TestLateTickStillGivesFullMinute(t *testing.T) {
 	}
 }
 
+func TestSleepNowStartsFullReminderOnce(t *testing.T) {
+	now := testNow()
+	timer := Timer{ID: 3, Phase: Running, StartedAt: now, TriggerAt: now.Add(time.Hour), SleepAt: now.Add(time.Hour + time.Minute)}
+	if !timer.SleepNow(now) {
+		t.Fatal("running timer rejected immediate sleep")
+	}
+	if timer.ID != 4 || timer.Phase != Grace || !timer.TriggerAt.Equal(now) || !timer.SleepAt.Equal(now.Add(time.Minute)) {
+		t.Fatal(timer)
+	}
+	if timer.SleepNow(now.Add(time.Second)) {
+		t.Fatal("restarted an existing reminder")
+	}
+	if r, s := timer.Tick(now.Add(59 * time.Second)); r || s {
+		t.Fatal("slept before the reminder minute")
+	}
+	if r, s := timer.Tick(now.Add(time.Minute)); r || !s || timer.Phase != Requesting {
+		t.Fatal(timer, r, s)
+	}
+	if timer.SleepNow(now.Add(time.Minute)) {
+		t.Fatal("duplicated an in-flight sleep request")
+	}
+	if timer.Phase != Requesting {
+		t.Fatal(timer.Phase)
+	}
+}
+
+func TestSleepNowFromInactiveAndFailedStates(t *testing.T) {
+	for _, phase := range []Phase{Idle, Completed, Cancelled, Failed} {
+		now := testNow()
+		timer := Timer{ID: 5, Phase: phase, Detail: "old"}
+		if !timer.SleepNow(now) || timer.Phase != Grace || !timer.SleepAt.Equal(now.Add(time.Minute)) || timer.Detail != "" {
+			t.Fatalf("%s: %+v", phase, timer)
+		}
+		if r, s := timer.Tick(now.Add(time.Minute)); r || !s {
+			t.Fatalf("%s: missing sleep effect", phase)
+		}
+	}
+}
+
 func TestPostponeWhileRunningAndDuringReminder(t *testing.T) {
 	now := testNow()
 	var timer Timer

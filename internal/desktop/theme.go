@@ -69,6 +69,18 @@ func button(c *ui.Context, key, name, label string, p palette, primary, disabled
 	return b.Clicked()
 }
 
+func quietButton(c *ui.Context, key, name, label string, p palette) bool {
+	b := ui.ButtonBase(c.Key(key)).Height(30).Padding(0, 12).Row().Gap(6).Center().Radius(8).Label(label)
+	if b.Hovered() {
+		b.Background(p.soft)
+	}
+	b.Children(func() {
+		icon(c, name, 14, p.accent)
+		ui.Text(c, label).FontSize(12).Bold().TextColor(p.accent).NoWrap()
+	})
+	return b.Clicked()
+}
+
 func ring(c *ui.Context, p palette, progress float64, warning bool, children func()) {
 	color := p.accent
 	if warning {

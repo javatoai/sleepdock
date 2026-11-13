@@ -14,6 +14,7 @@ import (
 type Backend interface {
 	Snapshot() application.Model
 	Start(domain.Spec)
+	SleepNow()
 	Postpone()
 	Cancel()
 	Retry()
@@ -133,9 +134,12 @@ func (v *View) setup(c *ui.Context, m application.Model, p palette) {
 		target, err = spec.Trigger(m.Now)
 	}
 	v.timeCaption(c, m.Now, target.Add(domain.GracePeriod), err, p)
-	ui.Row(c).FillWidth().Children(func() {
+	ui.Row(c).FillWidth().Gap(10).Children(func() {
 		if button(c, "start", "play", "开始计时", p, true, err != nil) {
 			v.Backend.Start(spec)
+		}
+		if button(c, "sleep-now", "moon", "立即睡眠", p, false, false) {
+			v.Backend.SleepNow()
 		}
 	})
 }
@@ -191,6 +195,11 @@ func (v *View) active(c *ui.Context, m application.Model, p palette) {
 					text = fmt.Sprintf("%02d", int(math.Ceil(remaining.Seconds())))
 				}
 				ui.Text(c, text).FontSize(45).FontFeatures("tnum").FontWeight(500).TextColor(p.text)
+			}
+			if m.Timer.Phase == domain.Running {
+				if quietButton(c, "sleep-now", "moon", "立即睡眠", p) {
+					v.Backend.SleepNow()
+				}
 			}
 		})
 	})

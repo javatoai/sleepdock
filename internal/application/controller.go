@@ -82,6 +82,16 @@ func (c *Controller) Start(spec domain.Spec) {
 	c.notify()
 }
 
+func (c *Controller) SleepNow() {
+	c.mu.Lock()
+	ok := !c.closed && c.model.Timer.SleepNow(c.clock.Now())
+	c.mu.Unlock()
+	if ok {
+		c.notify()
+		c.remind()
+	}
+}
+
 func (c *Controller) Tick() {
 	c.mu.Lock()
 	if c.closed {

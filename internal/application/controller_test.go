@@ -127,6 +127,62 @@ func TestControllerFailureRetryAndClose(t *testing.T) {
 		t.Fatal("closed controller fired")
 	}
 }
+func TestSleepNowRemindsThenSleepsOnce(t *testing.T) {
+	var sleeps, reminders atomic.Int32
+	store := &fakeStore{prefs: domain.Defaults()}
+	c, clock, events := fixture(t, sleepFunc(func(context.Context) error { sleeps.Add(1); return nil }), notifyFunc(func() error { reminders.Add(1); return nil }), store)
+	last := c.Snapshot().Preferences.Last
+	c.SleepNow()
+	m := c.Snapshot()
+	if m.Timer.Phase != domain.Grace || reminders.Load() != 1 || !m.Timer.SleepAt.Equal(clock.Now().Add(time.Minute)) {
+		t.Fatal(m.Timer, reminders.Load())
+	}
+	if m.Preferences.Last != last {
+		t.Fatal("immediate sleep overwrote the saved input")
+	}
+	clock.Advance(59 * time.Second)
+	c.Tick()
+	if sleeps.Load() != 0 || c.Snapshot().Timer.Phase != domain.Grace {
+		t.Fatal("slept before the reminder minute")
+	}
+	clock.Advance(time.Second)
+	c.Tick()
+	waitPhase(t, c, events, domain.Completed)
+	if sleeps.Load() != 1 || reminders.Load() != 1 {
+		t.Fatal(sleeps.Load(), reminders.Load())
+	}
+}
+func TestSleepNowIgnoredWhileRequesting(t *testing.T) {
+	started, release := make(chan struct{}), make(chan struct{})
+	var sleeps atomic.Int32
+	power := sleepFunc(func(context.Context) error {
+		if sleeps.Add(1) == 1 {
+			close(started)
+		}
+		<-release
+		return nil
+	})
+	c, clock, events := fixture(t, power, notifyFunc(func() error { return nil }), &fakeStore{prefs: domain.Defaults()})
+	c.Start(domain.Spec{Mode: "duration", Minutes: 1})
+	clock.Advance(time.Minute)
+	c.Tick()
+	clock.Advance(time.Minute)
+	c.Tick()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("sleep request did not start")
+	}
+	c.SleepNow()
+	if c.Snapshot().Timer.Phase != domain.Requesting || sleeps.Load() != 1 {
+		t.Fatal(c.Snapshot().Timer, sleeps.Load())
+	}
+	close(release)
+	waitPhase(t, c, events, domain.Completed)
+	if sleeps.Load() != 1 {
+		t.Fatal(sleeps.Load())
+	}
+}
 func TestSettingsRestoreDoesNotRestoreActivePlan(t *testing.T) {
 	store := &fakeStore{prefs: domain.Defaults()}
 	store.prefs.Last = domain.Spec{Mode: "at", Hour: 2, Minute: 30}

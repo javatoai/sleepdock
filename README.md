@@ -12,8 +12,8 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
 
 <table>
   <tr>
-    <td width="50%"><strong>设定时间</strong><br><br><img src="docs/assets/idle.png" alt="SleepDock 时间输入、快捷时长和开始按钮"></td>
-    <td width="50%"><strong>计时中</strong><br><br><img src="docs/assets/running.png" alt="环形倒计时、预计睡眠时间、取消和延后按钮"></td>
+    <td width="50%"><strong>设定时间</strong><br><br><img src="docs/assets/idle.png" alt="SleepDock 时间输入、快捷时长、开始计时和立即睡眠按钮"></td>
+    <td width="50%"><strong>计时中</strong><br><br><img src="docs/assets/running.png" alt="环形倒计时、立即睡眠、预计睡眠时间、取消和延后按钮"></td>
   </tr>
   <tr>
     <td><strong>最后一分钟</strong><br><br><img src="docs/assets/grace.png" alt="睡眠前最后一分钟的提醒界面"></td>
@@ -28,7 +28,8 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
 1. 解压对应系统的 ZIP。Windows 运行 `SleepDock.exe`；macOS 将 `SleepDock.app` 放入“应用程序”。
 2. 在“倒计时”中选时长，或在“指定时间”中选时刻；下方直接显示预计睡眠日期与时间。
 3. 点击“开始计时”。有活动计划时，关闭窗口会收进托盘；托盘菜单可查看、延后、取消或退出。
-4. 到时会显示提醒窗口和系统通知。最后 60 秒内可取消或延后，无人操作则请求睡眠。
+4. 想跳过等待时，从主界面、计时中界面或托盘选择“立即睡眠”；它将直接进入最后一分钟提醒，而不是立即黑屏。
+5. 到时会显示提醒窗口和系统通知。最后 60 秒内可取消或延后，无人操作则请求睡眠。
 
 当前为开发构建，未完成 Windows 代码签名、Apple Developer ID 签名或公证。macOS 首次运行可能需要在核实来源后通过系统“隐私与安全性”设置允许打开。
 
@@ -38,6 +39,7 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
 - 指定时间使用本机时区；当天该时刻已过去时安排到次日，并显示“明天”。
 - 输入时间是提醒触发时间，之后额外保留 60 秒取消机会；界面展示的预计睡眠时间已包含这 60 秒。实际事件处理延迟时仍保留完整提醒时间。
 - “延后15分钟”将尚未到达的计划时刻后移 15 分钟；在提醒期间操作则从当前时刻重新计时 15 分钟，随后仍有 60 秒提醒。
+- “立即睡眠”从点击时刻直接进入最后一分钟提醒，不等待已输入的时长；主界面、计时中界面和托盘都可触发。已在提醒中或正在请求睡眠时不会重复触发，也不覆盖上次输入。
 - **遵循系统已有电源计划，不保持唤醒。** 电脑提前自动或手动睡眠时，本次计划结束；唤醒后不会补执行或再次睡回去。
 - 一次只运行一个计划。完整退出会取消当前计时；重新启动只恢复上次输入，不恢复旧计划，也不会默认开机自启。
 - 睡眠请求失败时保留“重试”和“详情”。重试会重新给予 60 秒提醒，避免立即请求睡眠。
@@ -78,7 +80,7 @@ python3 scripts/package.py --targets windows/amd64
 python3 scripts/package.py --go /path/to/go
 ```
 
-输出为 `dist/SleepDock-0.1.0-windows-amd64.zip`、`dist/SleepDock-0.1.0-macos-arm64.zip`、`dist/SleepDock-0.1.0-macos-amd64.zip` 和 `dist/SHA256SUMS.txt`。Windows 中可以用 `python` 替代 `python3`。
+输出为 `dist/SleepDock-0.2.0-windows-amd64.zip`、`dist/SleepDock-0.2.0-macos-arm64.zip`、`dist/SleepDock-0.2.0-macos-amd64.zip` 和 `dist/SHA256SUMS.txt`。Windows 中可以用 `python` 替代 `python3`。
 
 ## 验证
 
@@ -88,7 +90,7 @@ go test -race ./internal/...
 go vet ./...
 ```
 
-测试覆盖跨午夜、提醒、延后、取消、重复触发保护、系统提前睡眠、失败重试、持久化及 MyGO 内存界面交互。测试使用虚拟时钟和模拟电源接口，**不会让测试机睡眠**。
+测试覆盖跨午夜、提醒、立即睡眠、延后、取消、重复触发保护、系统提前睡眠、失败重试、持久化及 MyGO 内存界面交互。测试使用虚拟时钟和模拟电源接口，**不会让测试机睡眠**。
 
 当前开发环境为 Linux；Windows / macOS 的原生托盘、系统通知、实际睡眠与唤醒需按[实机验收清单](docs/ACCEPTANCE.md)验证。
 
