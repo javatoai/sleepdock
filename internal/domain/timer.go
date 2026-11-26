@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const GracePeriod = time.Minute
+const GracePeriod = 5 * time.Second
 const PostponePeriod = 15 * time.Minute
 
 type Spec struct {
@@ -72,7 +72,7 @@ func (t Timer) Cancellable() bool { return t.Phase == Running || t.Phase == Grac
 // would add, so a second trigger must not restart or duplicate it.
 func (t Timer) CanSleepNow() bool { return t.Phase != Grace && t.Phase != Requesting }
 
-// SleepNow skips the configured wait and enters the full reminder minute. The
+// SleepNow skips the configured wait and starts a five-second countdown. The
 // saved input stays untouched; only an asynchronous result matching ID may
 // finish the plan.
 func (t *Timer) SleepNow(now time.Time) bool {
@@ -99,7 +99,7 @@ func (t *Timer) Start(now time.Time, spec Spec) error {
 }
 
 // Tick returns the two one-shot effects. A late tick always allows a full
-// reminder minute, including after a wall-clock jump or a suspended event loop.
+// reminder period, including after a wall-clock jump or a suspended event loop.
 func (t *Timer) Tick(now time.Time) (remind, sleep bool) {
 	if t.Phase == Running && !now.Before(t.TriggerAt) {
 		t.Phase = Grace

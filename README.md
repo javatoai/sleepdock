@@ -4,7 +4,7 @@
 
 <p align="center"><a href="#界面">界面</a> &nbsp;·&nbsp; <a href="#使用">使用</a> &nbsp;·&nbsp; <a href="#构建">构建</a> &nbsp;·&nbsp; <a href="#验证">验证</a></p>
 
-设好时间，收进托盘。到时提醒一分钟，再让电脑进入睡眠。
+设好时间，收进托盘。到时倒计时 5 秒，再让电脑进入睡眠。
 
 SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Intel。主界面以时间选择、环形倒计时和操作按钮表达功能，固定使用浅色主题。运行时无需安装 Go 或 PowerShell。
 
@@ -16,7 +16,7 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
     <td width="50%"><strong>计时中</strong><br><br><img src="docs/assets/running.png" alt="环形倒计时、立即睡眠、预计睡眠时间、取消和延后按钮"></td>
   </tr>
   <tr>
-    <td><strong>最后一分钟</strong><br><br><img src="docs/assets/grace.png" alt="睡眠前最后一分钟的提醒界面"></td>
+    <td><strong>睡眠前 5 秒</strong><br><br><img src="docs/assets/grace.png" alt="睡眠前 5 秒的倒计时提醒"></td>
     <td><strong>指定时间</strong><br><br><img src="docs/assets/at.png" alt="SleepDock 指定睡眠提醒时刻界面"></td>
   </tr>
 </table>
@@ -28,8 +28,8 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
 1. 解压对应系统的 ZIP。Windows 运行 `SleepDock.exe`；macOS 将 `SleepDock.app` 放入“应用程序”。
 2. 在“倒计时”中选时长，或在“指定时间”中选时刻；下方直接显示预计睡眠日期与时间。
 3. 点击“开始计时”。有活动计划时，关闭窗口会收进托盘；托盘菜单可查看、延后、取消或退出。
-4. 想跳过等待时，从主界面、计时中界面或托盘选择“立即睡眠”；它将直接进入最后一分钟提醒，而不是立即黑屏。
-5. 到时会显示提醒窗口和系统通知。最后 60 秒内可取消或延后，无人操作则请求睡眠。
+4. 想跳过等待时，从主界面、计时中界面或托盘选择“立即睡眠”，直接开始 5 秒倒计时。
+5. 睡眠前会显示倒计时窗口和系统通知。5 秒内可取消或延后，无人操作则请求睡眠。
 
 当前为开发构建，未完成 Windows 代码签名、Apple Developer ID 签名或公证。macOS 首次运行可能需要在核实来源后通过系统“隐私与安全性”设置允许打开。
 
@@ -37,12 +37,12 @@ SleepDock 是一个独立应用，支持 Windows x64、macOS Apple Silicon / Int
 
 - 倒计时提供 30 分钟、1 小时、2 小时、4 小时和 8 小时快捷项，也可直接输入小时与分钟，范围为 1 分钟至 24 小时。
 - 指定时间使用本机时区；当天该时刻已过去时安排到次日，并显示“明天”。
-- 输入时间是提醒触发时间，之后额外保留 60 秒取消机会；界面展示的预计睡眠时间已包含这 60 秒。实际事件处理延迟时仍保留完整提醒时间。
-- “延后15分钟”将尚未到达的计划时刻后移 15 分钟；在提醒期间操作则从当前时刻重新计时 15 分钟，随后仍有 60 秒提醒。
-- “立即睡眠”从点击时刻直接进入最后一分钟提醒，不等待已输入的时长；主界面、计时中界面和托盘都可触发。已在提醒中或正在请求睡眠时不会重复触发，也不覆盖上次输入。
+- 输入时间是提醒触发时间，界面展示的预计睡眠时间已包含随后 5 秒的倒计时。实际事件处理延迟时仍保留完整倒计时。
+- “延后15分钟”将尚未到达的计划时刻后移 15 分钟。在提醒期间操作则从当前时刻重新计时 15 分钟，随后进入 5 秒倒计时。
+- “立即睡眠”从点击时刻开始倒计时，保留上次输入。已在提醒中或正在请求睡眠时不会重复触发。
 - **遵循系统已有电源计划，不保持唤醒。** 电脑提前自动或手动睡眠时，本次计划结束；唤醒后不会补执行或再次睡回去。
 - 一次只运行一个计划。完整退出会取消当前计时；重新启动只恢复上次输入，不恢复旧计划，也不会默认开机自启。
-- 睡眠请求失败时保留“重试”和“详情”。重试会重新给予 60 秒提醒，避免立即请求睡眠。
+- 睡眠请求失败时保留“重试”和“详情”。点击“重试”会重新开始 5 秒倒计时。
 
 系统通知受本机权限与勿扰设置影响；计时到点时应用也会显示提醒窗口。Windows 请求普通睡眠，macOS 使用系统 `pmset sleepnow`，应用不强制终止其他程序，不修改全局电源设置。
 
@@ -80,7 +80,7 @@ python3 scripts/package.py --targets windows/amd64
 python3 scripts/package.py --go /path/to/go
 ```
 
-输出为 `dist/SleepDock-0.2.0-windows-amd64.zip`、`dist/SleepDock-0.2.0-macos-arm64.zip`、`dist/SleepDock-0.2.0-macos-amd64.zip` 和 `dist/SHA256SUMS.txt`。Windows 中可以用 `python` 替代 `python3`。
+输出为 `dist/SleepDock-0.2.1-windows-amd64.zip`、`dist/SleepDock-0.2.1-macos-arm64.zip`、`dist/SleepDock-0.2.1-macos-amd64.zip` 和 `dist/SHA256SUMS.txt`。Windows 中可以用 `python` 替代 `python3`。
 
 ## 验证
 

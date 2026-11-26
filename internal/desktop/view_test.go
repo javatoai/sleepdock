@@ -29,7 +29,7 @@ func TestAtTimeAndInvalidInput(t *testing.T) {
 	v := Preview("at")
 	b := v.Backend.(*previewBackend)
 	tt := ui.NewTester(v.Render, 560, 590)
-	if !tt.HasText("明天 02:01 睡眠") {
+	if !tt.HasText("明天 02:00 睡眠") {
 		t.Fatal(tt.Texts())
 	}
 	v.atHour = "99"
@@ -97,8 +97,14 @@ func TestImmediateSleepFromSetupAndCountdown(t *testing.T) {
 		if b.nows != 1 || b.model.Timer.Phase != domain.Grace {
 			t.Fatal(b.model.Timer, b.nows)
 		}
-		if !tt.HasText("即将睡眠") || !tt.HasText("取消") || tt.HasText("立即睡眠") {
+		if !tt.HasText("05") || !tt.HasText("即将睡眠") || !tt.HasText("取消") || tt.HasText("立即睡眠") {
 			t.Fatal(tt.Texts())
+		}
+		if err := tt.Click("取消"); err != nil {
+			t.Fatal(err)
+		}
+		if b.model.Timer.Phase != domain.Cancelled {
+			t.Fatal(b.model.Timer)
 		}
 	}
 	v := Preview("running")
@@ -107,7 +113,7 @@ func TestImmediateSleepFromSetupAndCountdown(t *testing.T) {
 	if err := tt.Click("立即睡眠"); err != nil {
 		t.Fatal(err)
 	}
-	if b.nows != 1 || b.model.Timer.Phase != domain.Grace || !tt.HasText("即将睡眠") {
+	if b.nows != 1 || b.model.Timer.Phase != domain.Grace || !tt.HasText("05") || !tt.HasText("即将睡眠") {
 		t.Fatal(b.model.Timer, tt.Texts())
 	}
 }
@@ -144,7 +150,7 @@ func TestResponsiveLightTheme(t *testing.T) {
 func TestGraceDisplaysSecondsAndDirectActions(t *testing.T) {
 	v := Preview("grace")
 	tt := ui.NewTester(v.Render, 560, 590)
-	if !tt.HasText("42") || !tt.HasText("即将睡眠") || !tt.HasText("取消") || !tt.HasText("延后15分钟") {
+	if !tt.HasText("05") || !tt.HasText("即将睡眠") || !tt.HasText("取消") || !tt.HasText("延后15分钟") {
 		t.Fatal(tt.Texts())
 	}
 }

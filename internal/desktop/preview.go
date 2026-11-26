@@ -15,7 +15,6 @@ func Preview(state string) *View {
 		if state == "grace" {
 			m.Timer.TriggerAt = now
 			m.Timer.Tick(now)
-			m.Timer.SleepAt = now.Add(42 * time.Second)
 		}
 	}
 	if state == "completed" {

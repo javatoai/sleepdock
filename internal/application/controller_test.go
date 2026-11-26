@@ -77,7 +77,7 @@ func TestControllerEffectAtMostOnceUnderConcurrentTicks(t *testing.T) {
 	if reminders.Load() != 1 {
 		t.Fatal(reminders.Load())
 	}
-	clock.Advance(time.Minute)
+	clock.Advance(5 * time.Second)
 	var wg sync.WaitGroup
 	for range 50 {
 		wg.Add(1)
@@ -113,7 +113,7 @@ func TestControllerFailureRetryAndClose(t *testing.T) {
 	c.Start(domain.Spec{Mode: "duration", Minutes: 1})
 	clock.Advance(time.Minute)
 	c.Tick()
-	clock.Advance(time.Minute)
+	clock.Advance(5 * time.Second)
 	c.Tick()
 	waitPhase(t, c, events, domain.Failed)
 	c.Retry()
@@ -121,7 +121,7 @@ func TestControllerFailureRetryAndClose(t *testing.T) {
 		t.Fatal("missing retry reminder")
 	}
 	c.Close()
-	clock.Advance(time.Minute)
+	clock.Advance(5 * time.Second)
 	c.Tick()
 	if calls.Load() != 1 {
 		t.Fatal("closed controller fired")
@@ -134,16 +134,16 @@ func TestSleepNowRemindsThenSleepsOnce(t *testing.T) {
 	last := c.Snapshot().Preferences.Last
 	c.SleepNow()
 	m := c.Snapshot()
-	if m.Timer.Phase != domain.Grace || reminders.Load() != 1 || !m.Timer.SleepAt.Equal(clock.Now().Add(time.Minute)) {
+	if m.Timer.Phase != domain.Grace || reminders.Load() != 1 || !m.Timer.SleepAt.Equal(clock.Now().Add(5*time.Second)) {
 		t.Fatal(m.Timer, reminders.Load())
 	}
 	if m.Preferences.Last != last {
 		t.Fatal("immediate sleep overwrote the saved input")
 	}
-	clock.Advance(59 * time.Second)
+	clock.Advance(4 * time.Second)
 	c.Tick()
 	if sleeps.Load() != 0 || c.Snapshot().Timer.Phase != domain.Grace {
-		t.Fatal("slept before the reminder minute")
+		t.Fatal("slept before the countdown ended")
 	}
 	clock.Advance(time.Second)
 	c.Tick()
@@ -166,7 +166,7 @@ func TestSleepNowIgnoredWhileRequesting(t *testing.T) {
 	c.Start(domain.Spec{Mode: "duration", Minutes: 1})
 	clock.Advance(time.Minute)
 	c.Tick()
-	clock.Advance(time.Minute)
+	clock.Advance(5 * time.Second)
 	c.Tick()
 	select {
 	case <-started:

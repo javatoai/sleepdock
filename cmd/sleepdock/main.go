@@ -14,7 +14,7 @@ func main() {
 	version := flag.Bool("version", false, "显示版本")
 	flag.Parse()
 	if *version {
-		fmt.Println("SleepDock 0.2.0")
+		fmt.Println("SleepDock 0.2.1")
 		return
 	}
 	path, err := storage.DefaultPath()

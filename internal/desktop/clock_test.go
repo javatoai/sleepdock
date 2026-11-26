@@ -19,7 +19,7 @@ func TestCountdownKeepsEverySecondWithSchedulingJitter(t *testing.T) {
 			initial := int(b.model.Timer.Remaining(b.model.Now) / time.Second)
 			// 交替模拟主线程和系统计时器的延迟，不能依赖一次 tick 恰好是一秒。
 			jitter := []time.Duration{2 * time.Millisecond, 150 * time.Millisecond, 4 * time.Millisecond, 80 * time.Millisecond}
-			for i := 1; i <= 30; i++ {
+			for i := 1; i <= min(30, initial-1); i++ {
 				b.model.Now = b.model.Now.Add(nextTickDelay(b.model) + jitter[(i-1)%len(jitter)])
 				b.model.Timer.Tick(b.model.Now)
 				tt.Frame()

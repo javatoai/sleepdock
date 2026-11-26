@@ -167,7 +167,8 @@ func (s *nativeApp) Remind() error {
 		if s.notification != nil {
 			s.notification.Close()
 		}
-		s.notification = mygo.NewNotification(mygo.NotificationOptions{ID: "sleepdock-reminder", Title: "SleepDock", Body: "60秒后睡眠"})
+		body := fmt.Sprintf("%d秒后睡眠", domain.GracePeriod/time.Second)
+		s.notification = mygo.NewNotification(mygo.NotificationOptions{ID: "sleepdock-reminder", Title: "SleepDock", Body: body})
 		s.notification.OnClick(s.show)
 		if err := s.notification.Show(); err != nil {
 			s.controller.Report(err)
